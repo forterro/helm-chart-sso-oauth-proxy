@@ -1,0 +1,25 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ include "sso-oauth-proxy.fullname" . }}
+  labels:
+    {{- include "sso-oauth-proxy.labels" . | nindent 4 }}
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`{{ .Values.app.url }}`)
+      kind: Rule
+      services:
+        - name: {{ .Values.app.service.name }}
+          port: {{ .Values.app.service.port }}
+          healthcheck:
+            path: /
+            host: {{ .Values.app.url }}
+            intervalSeconds: 10
+            timeoutSeconds: 5
+      middlewares:
+        - name: {{.Release.Namespace}}-{{ include "sso-oauth-proxy.fullname" . }}-signin@kubernetescrd
+        - name: {{.Release.Namespace}}-{{ include "sso-oauth-proxy.fullname" . }}-verify@kubernetescrd
+        - name: traefik-security@kubernetescrd
+  tls: {}

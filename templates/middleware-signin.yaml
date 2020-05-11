@@ -1,0 +1,14 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ include "sso-oauth-proxy.fullname" . }}-signin
+  labels:
+    {{- include "sso-oauth-proxy.labels" . | nindent 4 }}
+spec:
+  errors:
+    status:
+      - 401
+    query: /oauth2/sign_in
+    service:
+      name: {{ include "sso-oauth-proxy.fullname" . }}
+      port: {{ .Values.service.port }}

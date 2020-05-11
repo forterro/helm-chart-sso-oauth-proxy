@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sso-oauth-proxy.fullname" . }}
+  labels:
+    {{- include "sso-oauth-proxy.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "sso-oauth-proxy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sso-oauth-proxy.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "sso-oauth-proxy.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --provider={{ .Values.provider }}
+            - --provider-display-name={{ .Values.name }}
+            - --oidc-issuer-url={{ .Values.oidc.issuer }}
+            - --redirect-url={{ .Values.oidc.redirect }}
+            - --http-address=0.0.0.0:4180
+            - --upstream=file:///dev/null
+            - --email-domain={{ .Values.email_domain }}
+            - --scope={{ .Values.scope }}
+            - --reverse-proxy=true
+            - --cookie-domain={{.Values.cookie.domain }}
+            - --cookie-secure={{ .Values.cookie.secure }}
+            - --pass-access-token=true
+            - --pass-authorization-header=true
+            - --pass-basic-auth=true
+            - --pass-host-header=true
+            - --pass-user-headers=true
+            - --set-authorization-header=true
+            - --set-xauthrequest=true
+            - --skip-provider-button={{ .Values.skip_button }}
+          env:
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "sso-oauth-proxy.fullname" . }}-cookie
+                  key: secret
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "sso-oauth-proxy.fullname" . }}-oidc-client
+                  key: id
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "sso-oauth-proxy.fullname" . }}-oidc-client
+                  key: secret
+          ports:
+            - name: http
+              containerPort: 4180
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
