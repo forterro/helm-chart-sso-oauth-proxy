@@ -7,7 +7,7 @@ metadata:
 spec:
   forwardAuth:
     address: http://{{ include "sso-oauth-proxy.fullname" . }}.{{.Release.Namespace}}.svc.cluster.local:{{ .Values.service.port }}/oauth2/auth
-    trustForwardHeader: "true"
+    trustForwardHeader: true
     authResponseHeaders:
       - Auth-Request-User
       - X-Auth-Request-Email
