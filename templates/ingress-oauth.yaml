@@ -1,7 +1,7 @@
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
-  name: {{ include "sso-oauth-proxy.fullname" . }}
+  name: {{ include "sso-oauth-proxy.fullname" . }}-oauth
   labels:
     {{- include "sso-oauth-proxy.labels" . | nindent 4 }}
 spec:
